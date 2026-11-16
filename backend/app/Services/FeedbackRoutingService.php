@@ -29,19 +29,19 @@ class FeedbackRoutingService
             try {
                 DB::transaction(function () use ($feedback) {
 
-                    // Find the office based on feedback category
+                    // Determine the assigned office.
                     $office = self::OFFICE_ROUTING[$feedback->category]
                         ?? throw new \RuntimeException(
                             'No office configured for this category.'
                         );
 
-                    // Update feedback assignment and status
+                    // Update the feedback assignment and status.
                     $feedback->update([
                         'assigned_office' => $office,
                         'status' => 'Pending',
                     ]);
 
-                    // Generate notification for assigned office
+                    // Notify the assigned office.
                     FeedbackNotification::create([
                         'feedback_id' => $feedback->id,
                         'recipient_office' => $office,
@@ -51,7 +51,7 @@ class FeedbackRoutingService
                         'status' => 'Unread',
                     ]);
 
-                    // Record successful automation
+                    // Record successful routing.
                     AutomationLog::create([
                         'feedback_id' => $feedback->id,
                         'action' => 'Automatic Feedback Routing',
@@ -67,16 +67,17 @@ class FeedbackRoutingService
 
             } catch (Throwable $exception) {
 
-                // Maximum attempts reached
+                // Do not store the raw exception message.
+                // It may contain internal implementation details.
+
                 if ($attempt === self::MAX_ATTEMPTS) {
 
                     DB::transaction(function () use (
                         $feedback,
-                        $attempt,
-                        $exception
+                        $attempt
                     ) {
 
-                        // Record failed routing
+                        // Store a safe, generic failure message.
                         AutomationLog::create([
                             'feedback_id' => $feedback->id,
                             'action' => 'Automatic Feedback Routing',
@@ -84,11 +85,11 @@ class FeedbackRoutingService
                             'details' => 'Routing failed after maximum attempts.',
                             'retry_count' => $attempt - 1,
                             'max_retries' => self::MAX_ATTEMPTS,
-                            'error_message' => $exception->getMessage(),
+                            'error_message' => 'Automatic routing failed. Manual review required.',
                             'requires_manual_review' => true,
                         ]);
 
-                        // Notify administration for manual review
+                        // Notify administration for manual review.
                         FeedbackNotification::create([
                             'feedback_id' => $feedback->id,
                             'recipient_office' => 'General Administration Office',
@@ -102,7 +103,7 @@ class FeedbackRoutingService
                     return false;
                 }
 
-                // Wait before retrying
+                // Pause briefly before retrying.
                 usleep(200000);
             }
         }

@@ -1,0 +1,32 @@
+
+# Flutter
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/coverage/
+**/.gradle/
+
+# Laravel
+backend/vendor/
+backend/node_modules/
+backend/bootstrap/cache/*.php
+backend/storage/logs/*.log
+
+# Secrets
+**/.env
+**/.env.*
+!**/.env.example
+**/key.properties
+**/*.jks
+**/*.keystore
+
+# IDE
+**/.idea/
+**/*.iml
+
+# Operating system
+.DS_Store
+Thumbs.db

@@ -1,28 +1,23 @@
-import 'staff_dashboard.dart';
 import 'package:flutter/material.dart';
+
 import 'services/feedback_api_service.dart';
+import 'services/auth_service.dart';
+import 'login_page.dart';
 
 class StaffDashboardPage extends StatefulWidget {
   const StaffDashboardPage({super.key});
 
   @override
-  State<StaffDashboardPage> createState() =>
-      _StaffDashboardPageState();
+  State<StaffDashboardPage> createState() => _StaffDashboardPageState();
 }
 
 class _StaffDashboardPageState extends State<StaffDashboardPage> {
-  final List<String> offices = [
-    'Academic Affairs Office',
-    'Facilities Management Office',
-    'Student Services Office',
-    'General Administration Office',
-  ];
-
-  String selectedOffice = 'Academic Affairs Office';
-
   List<Map<String, dynamic>> feedbackRecords = [];
+
   bool isLoading = true;
   String? errorMessage;
+
+  String get assignedOffice => AuthService.assignedOffice;
 
   @override
   void initState() {
@@ -43,9 +38,9 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
 
       setState(() {
         feedbackRecords = records
-            .map((record) =>
-        Map<String, dynamic>.from(record as Map))
+            .map((record) => Map<String, dynamic>.from(record as Map))
             .toList();
+
         isLoading = false;
       });
     } catch (error) {
@@ -56,6 +51,19 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> _logout() async {
+    final navigator = Navigator.of(context);
+
+    await AuthService.logout();
+
+    if (!navigator.mounted) return;
+
+    navigator.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   Color _statusColor(String status) {
@@ -71,8 +79,10 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Defense in depth: display only the authenticated staff office.
+    // Laravel remains responsible for enforcing access permissions.
     final assignedFeedback = feedbackRecords.where((feedback) {
-      return feedback['assigned_office'] == selectedOffice;
+      return feedback['assigned_office'] == assignedOffice;
     }).toList();
 
     return Scaffold(
@@ -86,6 +96,11 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Feedback',
           ),
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+          ),
         ],
       ),
       body: Center(
@@ -97,13 +112,9 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
     );
   }
 
-  Widget _buildContent(
-      List<Map<String, dynamic>> assignedFeedback,
-      ) {
+  Widget _buildContent(List<Map<String, dynamic>> assignedFeedback) {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (errorMessage != null) {
@@ -129,40 +140,25 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
       children: [
         const Text(
           'Office Feedback Management',
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         const Text(
-          'View feedback automatically routed to university offices.',
+          'View feedback automatically routed to your assigned office.',
         ),
         const SizedBox(height: 24),
 
-        DropdownButtonFormField<String>(
-          initialValue: selectedOffice,
-          isExpanded: true,
+        // Assigned office is read-only.
+        TextFormField(
+          initialValue: assignedOffice.isEmpty
+              ? 'No office assigned'
+              : assignedOffice,
+          readOnly: true,
           decoration: const InputDecoration(
-            labelText: 'Select Office',
+            labelText: 'Your Assigned Office',
+            prefixIcon: Icon(Icons.business),
             border: OutlineInputBorder(),
           ),
-          items: offices.map((office) {
-            return DropdownMenuItem(
-              value: office,
-              child: Text(
-                office,
-                overflow: TextOverflow.ellipsis,
-              ),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setState(() {
-                selectedOffice = value;
-              });
-            }
-          },
         ),
 
         const SizedBox(height: 24),
@@ -194,10 +190,7 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
 
         const Text(
           'Assigned Feedback Records',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 12),
@@ -206,24 +199,18 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
           const Card(
             child: Padding(
               padding: EdgeInsets.all(24),
-              child: Text(
-                'No feedback assigned to this office.',
-              ),
+              child: Text('No feedback assigned to this office.'),
             ),
           ),
 
         ...assignedFeedback.map((feedback) {
-          final title =
-              feedback['title']?.toString() ?? 'Untitled';
+          final title = feedback['title']?.toString() ?? 'Untitled';
 
-          final category =
-              feedback['category']?.toString() ?? 'Unknown';
+          final category = feedback['category']?.toString() ?? 'Unknown';
 
-          final description =
-              feedback['description']?.toString() ?? '';
+          final description = feedback['description']?.toString() ?? '';
 
-          final status =
-              feedback['status']?.toString() ?? 'Pending';
+          final status = feedback['status']?.toString() ?? 'Pending';
 
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
@@ -231,9 +218,7 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
               contentPadding: const EdgeInsets.all(16),
               title: Text(
                 title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

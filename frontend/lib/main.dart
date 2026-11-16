@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
-import 'student_dashboard.dart';
+
+import 'login_page.dart';
 import 'services/feedback_api_service.dart';
 
 void main() {
@@ -16,12 +16,10 @@ class StudentFeedbackApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Student Feedback Routing System',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const StudentDashboard(),
+      home: const LoginPage(),
     );
   }
 }
@@ -36,7 +34,6 @@ class FeedbackPage extends StatefulWidget {
 class _FeedbackPageState extends State<FeedbackPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final _studentNameController = TextEditingController();
   final _titleController = TextEditingController();
   final _feedbackController = TextEditingController();
 
@@ -45,7 +42,6 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
   @override
   void dispose() {
-    _studentNameController.dispose();
     _titleController.dispose();
     _feedbackController.dispose();
     super.dispose();
@@ -64,7 +60,6 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
     try {
       final result = await FeedbackApiService.submitFeedback(
-        studentName: _studentNameController.text.trim(),
         title: _titleController.text.trim(),
         category: _category,
         description: _feedbackController.text.trim(),
@@ -81,13 +76,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 ? 'Feedback submitted and routed successfully!'
                 : 'Feedback saved, but routing requires manual review.',
           ),
-          backgroundColor:
-          routingSuccess ? Colors.green : Colors.orange,
+          backgroundColor: routingSuccess ? Colors.green : Colors.orange,
         ),
       );
 
-      // Clear fields after successful API submission.
-      _studentNameController.clear();
       _titleController.clear();
       _feedbackController.clear();
 
@@ -133,8 +125,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 child: Form(
                   key: _formKey,
                   child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Text(
                         'Submit Student Feedback',
@@ -143,28 +134,13 @@ class _FeedbackPageState extends State<FeedbackPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
-                      const SizedBox(height: 20),
-
-                      // Student Name
-                      TextFormField(
-                        controller: _studentNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Student Name',
-                          hintText: 'Enter your full name',
-                          prefixIcon: Icon(Icons.person),
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
-                            return 'Please enter your name';
-                          }
-                          return null;
-                        },
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Your name is automatically identified '
+                        'from your signed-in account.',
+                        style: TextStyle(color: Colors.grey),
                       ),
-
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
                       // Feedback Title
                       TextFormField(
@@ -176,8 +152,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                           border: OutlineInputBorder(),
                         ),
                         validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter a feedback title';
                           }
                           return null;
@@ -196,26 +171,27 @@ class _FeedbackPageState extends State<FeedbackPage> {
                           prefixIcon: Icon(Icons.category),
                           border: OutlineInputBorder(),
                         ),
-                        items: [
-                          'Academic',
-                          'Facilities',
-                          'Student Services',
-                          'Others',
-                        ].map((category) {
-                          return DropdownMenuItem<String>(
-                            value: category,
-                            child: Text(category),
-                          );
-                        }).toList(),
+                        items:
+                            [
+                              'Academic',
+                              'Facilities',
+                              'Student Services',
+                              'Others',
+                            ].map((category) {
+                              return DropdownMenuItem<String>(
+                                value: category,
+                                child: Text(category),
+                              );
+                            }).toList(),
                         onChanged: _isSubmitting
                             ? null
                             : (value) {
-                          if (value != null) {
-                            setState(() {
-                              _category = value;
-                            });
-                          }
-                        },
+                                if (value != null) {
+                                  setState(() {
+                                    _category = value;
+                                  });
+                                }
+                              },
                       ),
 
                       const SizedBox(height: 20),
@@ -226,14 +202,12 @@ class _FeedbackPageState extends State<FeedbackPage> {
                         maxLines: 5,
                         decoration: const InputDecoration(
                           labelText: 'Your Feedback',
-                          hintText:
-                          'Enter your feedback here...',
+                          hintText: 'Enter your feedback here...',
                           border: OutlineInputBorder(),
                           alignLabelWithHint: true,
                         ),
                         validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter your feedback';
                           }
                           return null;
@@ -244,20 +218,18 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
                       // Submit Button
                       FilledButton(
-                        onPressed:
-                        _isSubmitting ? null : _submitFeedback,
+                        onPressed: _isSubmitting ? null : _submitFeedback,
                         child: Padding(
-                          padding:
-                          const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           child: _isSubmitting
                               ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
                               : const Text('Submit Feedback'),
                         ),
                       ),
