@@ -3,7 +3,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // Development default. Override for other environments using:
+  // --dart-define=API_BASE_URL=https://your-api-domain.example/api
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:8000/api',
+  );
 
   // Stored in application memory only.
   static String? _token;
